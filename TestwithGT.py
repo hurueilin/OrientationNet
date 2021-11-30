@@ -9,6 +9,11 @@ from tqdm import tqdm
 from argparse import ArgumentParser
 
 
+# Parser for loading model
+parser = ArgumentParser()
+parser.add_argument("-m", "--model", help="the model(.pth) you want to load (put in output folder)", dest="model", default="best_model.pth")
+args = parser.parse_args()
+
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -32,7 +37,8 @@ class MyDataset(Dataset):
         
     def __getitem__(self, index):
         imgName, label = self.data[index]
-        img = Image.open('data/image_train_augmented/'+imgName).convert('RGB')
+        # img = Image.open('data/image_train_augmented/'+imgName).convert('RGB')
+        img = Image.open('data/real/image_test_new/'+imgName).convert('RGB')
 
         if self.transform:
             img = self.transform(img)
@@ -50,15 +56,12 @@ test_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-test_dataset = MyDataset(txt_file='data/syn_test_label.txt', transform=test_transform)
+# test_dataset = MyDataset(txt_file='data/syn_test_label.txt', transform=test_transform)
+test_dataset = MyDataset(txt_file='data/real/image_test_new_label.txt', transform=test_transform)
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           batch_size=BATCH_SIZE,
                                           shuffle=False)
 
-# Parser for loading model
-parser = ArgumentParser()
-parser.add_argument("-m", "--model", help="the model(.pth) you want to load in", dest="model", default="best_model.pth")
-args = parser.parse_args()
 
 # Load model
 model = torch.load(f'output/{args.model}')
@@ -91,12 +94,13 @@ print('Test Accuracy: {:.4f}'.format(test_acc))
 
 
 # Create output file
-submission = []
-with open('data/syn_test_label.txt') as f:
-    test_images = [x.strip().split()[0] for x in f.readlines()]  # all the testing images
+# submission = []
+# # with open('data/syn_test_label.txt') as f:
+# with open('data/old/image_test_new_label.txt') as f:
+#     test_images = [x.strip().split()[0] for x in f.readlines()]  # all the testing images
 
-for imgName, predicted_class in zip(test_images, predictions):
-    submission.append([imgName, predicted_class])
+# for imgName, predicted_class in zip(test_images, predictions):
+#     submission.append([imgName, predicted_class])
 
-np.savetxt('output/result.txt', submission, fmt='%s')
-print(f'Finish saving final predictions of {count} testing data to output/result.txt !')
+# np.savetxt('output/result.txt', submission, fmt='%s')
+# print(f'Finish saving final predictions of {count} testing data to output/result.txt !')

@@ -21,7 +21,7 @@ BATCH_SIZE = 32
 LR = 0.001
 
 
-class MyDataset(Dataset):
+class MyTrainDataset(Dataset):
     def __init__(self, txt_file, transform=None):
         data = []
         with open(txt_file, 'r') as file_handler:
@@ -50,6 +50,35 @@ class MyDataset(Dataset):
         return len(self.data)
 
 
+class MyValDataset(Dataset):
+    def __init__(self, txt_file, transform=None):
+        data = []
+        with open(txt_file, 'r') as file_handler:
+            for line in file_handler:
+                line = line.strip('\n')
+                imgName, label = line.split()
+                label = label.split('.')[0]
+                data.append((imgName, label))
+
+        self.data = data
+        self.transform = transform
+        
+    def __getitem__(self, index):
+        imgName, label = self.data[index]
+        img = Image.open('data/real/image_test_new/'+imgName).convert('RGB')
+
+        if self.transform:
+            img = self.transform(img)
+        
+        # Convert str label to tensor
+        label = torch.tensor(int(label))
+
+        return img, label
+    
+    def __len__(self):
+        return len(self.data)
+
+
 train_transform = transforms.Compose([
         transforms.Resize((100, 100)),
         transforms.ToTensor(),
@@ -61,12 +90,13 @@ val_transform = transforms.Compose([
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
-train_dataset = MyDataset(txt_file='data/syn_train_label.txt', transform=train_transform)
+train_dataset = MyTrainDataset(txt_file='data/syn_train_label.txt', transform=train_transform)
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=BATCH_SIZE,
                                            shuffle=True)
 
-val_dataset = MyDataset(txt_file='data/syn_val_label.txt', transform=val_transform)
+# val_dataset = MyDataset(txt_file='data/syn_val_label.txt', transform=val_transform)
+val_dataset = MyValDataset(txt_file='data/real/image_test_new_label.txt', transform=val_transform)
 val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
                                            batch_size=BATCH_SIZE,
                                            shuffle=False)
@@ -78,9 +108,11 @@ val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
 # model.device = device
 
 # Init well-known model and modify the last FC layer
-model = torchvision.models.resnet50(pretrained=True)
+model = torchvision.models.resnet101(pretrained=True)
+# print(model)
 num_ftrs = model.fc.in_features
 model.fc = nn.Linear(num_ftrs, NUM_CLASSES)
+# model.classifier = nn.Linear(1024, NUM_CLASSES)  # densenet
 model = model.to(device)  # Send the model to GPU
 
 summary(model, (3, 32, 32))

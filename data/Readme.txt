@@ -8,6 +8,7 @@ testing data: 先拿真實資料image_test_new(16,675)試試看
 合成資料192150 + 14818 = 206968 images after augmented
 
 ===================================================================================
+<11/06>
 把合成資料image_train_augmented(206,968)拆成train/val/test
 * syn_train_label: 5000*10=50000張
 * syn_val_label:  500*10=5000張
